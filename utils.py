@@ -16,7 +16,7 @@ def get_url_with_scheme(url):
         URL with the scheme added
     """
 
-    if not url.startswith("https://") or url.startswith("http://"):
+    if not url.startswith("https://") or not url.startswith("http://"):
         url = "https://" + url
     return url
 
@@ -39,8 +39,7 @@ def get_domain_from_url(url, keep_www=True):
         Domain extracted from the URL
     """
 
-    if not url.startswith("https://"):
-        url = "https://" + url
+    url = get_url_with_scheme(url)
 
     domain = urlparse(url).netloc
     if keep_www:
