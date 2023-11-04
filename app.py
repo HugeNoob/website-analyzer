@@ -14,9 +14,6 @@ from os import getenv
 
 from socket import gethostbyname, gaierror
 
-from whois import whois, parser
-
-
 app = Flask(__name__)
 
 load_dotenv()
@@ -25,7 +22,6 @@ load_dotenv()
 @app.route('/')
 def analyze_website():
     url = request.args.get('url')
-    print("Parsed URL:", url)
 
     try:
         response = requests.get(url)
@@ -60,11 +56,6 @@ def extract_domain_info(url):
         ip = None
         print("Failed to get IP address.")
 
-    try:
-        domain_info = whois(domain)
-    except parser.PywhoisError:
-        domain_info = defaultdict(lambda: "Failed to get domain data")
-
     if ip:
         location_data = get_ip_location_data(ip)
     else:
@@ -72,7 +63,7 @@ def extract_domain_info(url):
 
     return {
         "ip": ip,
-        "isp": domain_info.get("org", ""),
+        "isp": location_data["isp"],
         "organization": location_data["organization"],
         "asn": location_data["asn"],
         "location": location_data["location"],
