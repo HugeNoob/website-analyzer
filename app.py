@@ -33,7 +33,7 @@ def analyze_website():
 
         # Extract information
         domain_info = extract_domain_info(url)
-        subdomains = extract_subdomains(soup)
+        subdomains = extract_subdomains(url)
         asset_domains = extract_asset_domains(soup)
 
         # Return the analysis results as JSON
@@ -88,8 +88,19 @@ def get_ip_location_data(ip):
     return location_data
 
 
-def extract_subdomains(soup):
-    return
+def extract_subdomains(url):
+    parts = urlparse(url).netloc.split('.')
+    domain = '.'.join(parts[-2:])
+
+    SUBDOMAIN_API_KEY = getenv("SUBDOMAIN_API_KEY")
+    response = requests.get(
+        f'https://subdomains.whoisxmlapi.com/api/v1?apiKey={SUBDOMAIN_API_KEY}&domainName={domain}').json()
+
+    subdomains = []
+    for record in response.get("result").get("records"):
+        subdomains.append(record["domain"])
+
+    return subdomains
 
 
 def extract_asset_domains(soup):
