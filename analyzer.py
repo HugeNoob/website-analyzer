@@ -1,5 +1,7 @@
 from collections import defaultdict
 
+from cymruwhois import Client
+
 from bs4 import BeautifulSoup
 
 from dotenv import load_dotenv
@@ -46,8 +48,8 @@ def get_ip_location_data(ip):
         f'https://api.ipgeolocation.io/ipgeo?apiKey={IP_API_KEY}&ip={ip}').json()
 
     # The API above does not provide asn in response, despite mentioning it in documentation
-    # Hence, a different endpoint is needed for asn specifically
-    asn = requests.get(f'https://ipapi.co/{ip}/json/').json().get("asn")
+    # Hence, a different library is used for asn specifically
+    asn = "AS" + Client().lookup(ip).asn
 
     location_data = {
         "isp": response.get("isp"),
