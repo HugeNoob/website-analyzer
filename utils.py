@@ -17,13 +17,19 @@ from urllib.parse import urlparse
 load_dotenv()
 
 
-def get_domain_from_url(url, includeHost=True):
+def get_domain_from_url(url, keep_www=True):
+    if not url.startswith("https://"):
+        url = "https://" + url
+
     domain = urlparse(url).netloc
-    if includeHost:
+    if keep_www:
         return domain
 
     parts = domain.split('.')
-    return '.'.join(parts[-2:])
+    if parts[0] == "www":
+        return ".".join(parts[1:])
+
+    return domain
 
 
 def extract_domain_info(url):
@@ -68,14 +74,14 @@ def get_ip_location_data(ip):
 
 
 def extract_subdomains(url):
-    domain = get_domain_from_url(url, includeHost=False)
+    domain = get_domain_from_url(url, keep_www=False)
 
     SUBDOMAIN_API_KEY = getenv("SUBDOMAIN_API_KEY")
     response = requests.get(
         f'https://subdomains.whoisxmlapi.com/api/v1?apiKey={SUBDOMAIN_API_KEY}&domainName={domain}').json()
 
     subdomains = []
-    for record in response.get("result").get("records"):
+    for record in response["result"]["records"]:
         subdomains.append(record["domain"])
 
     return subdomains
