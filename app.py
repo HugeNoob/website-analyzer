@@ -1,11 +1,25 @@
 from bs4 import BeautifulSoup
 
+from collections import defaultdict
+
+from dotenv import load_dotenv
+
 from flask import Flask, request, jsonify
+
+from urllib.parse import urlparse
 
 import requests
 
+from os import getenv
+
+from socket import gethostbyname, gaierror
+
+from whois import whois, parser
+
 
 app = Flask(__name__)
+
+load_dotenv()
 
 
 @app.route('/')
@@ -22,13 +36,13 @@ def analyze_website():
         soup = BeautifulSoup(html_content, 'html.parser')
 
         # Extract information
-        domains = extract_domains(soup)
+        domain_info = extract_domain_info(url)
         subdomains = extract_subdomains(soup)
         asset_domains = extract_asset_domains(soup)
 
         # Return the analysis results as JSON
         return jsonify({
-            "info": domains,
+            "info": domain_info,
             "subdomains": subdomains,
             "asset_domains": asset_domains
         })
@@ -37,8 +51,50 @@ def analyze_website():
         return jsonify({"error": "Failed to fetch the website data."})
 
 
-def extract_domains(soup):
-    return
+def extract_domain_info(url):
+    domain = urlparse(url).netloc
+
+    try:
+        ip = gethostbyname(domain)
+    except gaierror:
+        ip = None
+        print("Failed to get IP address.")
+
+    try:
+        domain_info = whois(domain)
+    except parser.PywhoisError:
+        domain_info = defaultdict(lambda: "Failed to get domain data")
+
+    if ip:
+        location_data = get_ip_location_data(ip)
+    else:
+        location_data = defaultdict(lambda: "Failed to get location data")
+
+    return {
+        "ip": ip,
+        "isp": domain_info.get("org", ""),
+        "organization": location_data["organization"],
+        "asn": location_data["asn"],
+        "location": location_data["location"],
+    }
+
+
+def get_ip_location_data(ip):
+    IP_API_KEY = getenv("IP_API_KEY")
+    response = requests.get(
+        f'https://api.ipgeolocation.io/ipgeo?apiKey={IP_API_KEY}&ip={ip}').json()
+
+    # The API above does not provide asn in response, despite mentioning it in documentation
+    # Hence, a different endpoint is needed for asn specifically
+    asn = requests.get(f'https://ipapi.co/{ip}/json/').json().get("asn")
+
+    location_data = {
+        "isp": response.get("isp"),
+        "organization": response.get("organization"),
+        "asn": asn,
+        "location": response.get("country_code2"),
+    }
+    return location_data
 
 
 def extract_subdomains(soup):
