@@ -20,8 +20,23 @@ load_dotenv()
 
 
 def extract_domain_info(url):
+    """
+    Extracts domain information from the given URL
+
+    Parameters
+    ----------
+    url : str
+        URL to extract domain information from
+
+    Returns
+    -------
+    dict
+        Dictionary containing ip, isp, organization, asn, and location
+    """
+
     domain = get_domain_from_url(url)
 
+    # Resolve domain to IP address
     try:
         ip = gethostbyname(domain)
     except gaierror:
@@ -43,6 +58,20 @@ def extract_domain_info(url):
 
 
 def get_ip_location_data(ip):
+    """
+    Gets location data for a given IP address
+
+    Parameters
+    ----------
+    ip : str
+        IP address to get location data for
+
+    Returns
+    -------
+    dict
+        Dictionary containing isp, organization, asn, and location
+    """
+
     IP_API_KEY = getenv("IP_API_KEY")
     response = requests.get(
         f'https://api.ipgeolocation.io/ipgeo?apiKey={IP_API_KEY}&ip={ip}').json()
@@ -61,6 +90,20 @@ def get_ip_location_data(ip):
 
 
 def extract_subdomains(url):
+    """
+    Extracts subdomains information from the given URL
+
+    Parameters
+    ----------
+    url : str
+        URL to extract subdomains information from
+
+    Returns
+    -------
+    list of str
+        List of subdomains
+    """
+
     domain = get_domain_from_url(url, keep_www=False)
 
     SUBDOMAIN_API_KEY = getenv("SUBDOMAIN_API_KEY")
@@ -75,6 +118,21 @@ def extract_subdomains(url):
 
 
 def extract_asset_domains(url):
+    """
+    Extracts asset domains information from the given URL
+
+    Parameters
+    ----------
+    url : str
+        URL to extract asset domains information from
+
+    Returns
+    -------
+    dict
+        Dictionary containing lists of javascripts, stylesheets, images, iframes,
+        and anchors asset domains
+    """
+
     response = requests.get(url)
     response.raise_for_status()  # Check for HTTP request errors
     html_content = response.text
