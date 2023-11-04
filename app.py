@@ -10,6 +10,8 @@ from urllib.parse import urlparse
 
 import requests
 
+from re import match
+
 from os import getenv
 
 from socket import gethostbyname, gaierror
@@ -103,10 +105,49 @@ def extract_subdomains(url):
     return subdomains
 
 
+def get_domain(url):
+    return urlparse(url).netloc
+
+
 def extract_asset_domains(soup):
-    return
+    javascripts = set()
+    for script in soup.find_all('script', src=True):
+        src = script['src']
+        if src and match(r'^https?://', src):
+            javascripts.add(get_domain(src))
+
+    stylesheets = set()
+    for link in soup.find_all('link', rel='stylesheet'):
+        href = link.get('href')
+        if href and match(r'^https?://', href):
+            stylesheets.add(get_domain(href))
+
+    images = set()
+    for img in soup.find_all('img', src=True):
+        src = img['src']
+        if src and match(r'^https?://', src):
+            images.add(get_domain(src))
+
+    iframes = set()
+    for iframe in soup.find_all('iframe', src=True):
+        src = iframe['src']
+        if src and match(r'^https?://', src):
+            iframes.add(get_domain(src))
+
+    anchors = set()
+    for anchor in soup.find_all('a', href=True):
+        href = anchor['href']
+        if href and match(r'^https?://', href):
+            anchors.add(get_domain(href))
+
+    return {
+        "javascripts": list(javascripts),
+        "stylesheets": list(stylesheets),
+        "images": list(images),
+        "iframes": list(iframes),
+        "anchors": list(anchors)
+    }
 
 
 if __name__ == '__main__':
     app.run(debug=True)
-
